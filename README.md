@@ -1,39 +1,58 @@
 # AKI! Function – Notification (Student Not In Class)
 
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 ## Purpose
 Azure Function to receive, validate, persist, and publish notifications when a student attempts to check in to a class they are not assigned to.
 
 ## Flow
-1. Receives HTTP POST from Core/BFF
-2. Validates payload (Zod)
-3. Persists notification in Azure SQL
-4. Publishes event to Service Bus topic `institution.notifications`
+1. Receives HTTP POST at `/api/notification`
+2. Validates payload using Zod schema
+3. Persists notification in Azure SQL (via Sequelize)
+4. Publishes event to Azure Service Bus topic (`institution.notifications`)
 5. Returns HTTP 201 with confirmation
 
-## Setup
-1. Clone repo
-2. Copy `.env.example` to `.env` and fill in credentials
-3. Run migration in Azure SQL:
-   ```
-   npm run migrate
-   ```
-4. Start locally:
-   ```
-   func start
-   ```
+## Getting Started
+
+### Prerequisites
+- Node.js >= 18
+- Azure Functions Core Tools
+- Azure SQL Database
+- Azure Service Bus
+
+### Setup
+1. Clone the repository:
+  ```bash
+  git clone https://github.com/CamilaDLRS/aki_function_notify_institution.git
+  cd aki_function_notify_institution
+  ```
+2. Copy `.env.example` to `.env` and fill in your credentials:
+  ```bash
+  cp .env.example .env
+  # Edit .env with your DB and Service Bus credentials
+  ```
+3. Install dependencies:
+  ```bash
+  npm install
+  ```
+4. Run database migrations (if using Knex):
+  ```bash
+  npm run migrate
+  ```
+5. Start the function locally:
+  ```bash
+  npm run build
+  func start
+  ```
 
 ## Example Request
 ```bash
-curl -X POST https://aki-function-notify.azurewebsites.net/api/notification \
+curl -X POST http://localhost:7071/api/notification \
   -H "Content-Type: application/json" \
   -d '{
-    "event_id": "671a1bdfc1234",
     "class_id": 12,
     "teacher_id": 45,
-    "student_cpf": "12345678901",
-    "type": "student_not_in_class",
-    "message": "Student attempted to register presence but is not part of the class",
-    "timestamp": "2025-10-23T13:12:00Z"
+    "message": "Student attempted to register presence but is not part of the class"
   }'
 ```
 
@@ -47,16 +66,23 @@ curl -X POST https://aki-function-notify.azurewebsites.net/api/notification \
 ```
 
 ## Azure Bindings
-See `src/function.json` for HTTP trigger and output bindings. Endpoint is `/api/notification`.
+See `notification/function.json` for HTTP trigger and output bindings. Endpoint is `/api/notification`.
 
 ## Environment Variables
-See `.env.example`.
+See `.env.example` for all required variables:
+
+- Database connection: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, etc.
+- Service Bus: `SERVICEBUS_CONNECTION_STRING`, `SERVICEBUS_TOPIC`
+- Logging: `LOG_LEVEL`
 
 ## Logging
-Structured logs with correlation IDs.
+Structured logs with correlation IDs. See `src/shared/logger.ts`.
 
 ## Retry & Idempotency
-Retries for SQL/Service Bus are handled in repository/publisher. Idempotency can be extended by checking for duplicate `event_id`.
+Retries for SQL/Service Bus are handled in repository/publisher. Idempotency can be extended by checking for duplicate events (extend schema as needed).
+
+## Contributing
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 MIT
