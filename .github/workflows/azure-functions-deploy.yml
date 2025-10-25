@@ -11,6 +11,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '20'
 
       - name: Install dependencies
         run: npm install
@@ -29,19 +32,13 @@ jobs:
       - name: 'Log in to Azure with AZ CLI'
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_241BDF13BE6F4ABE9F1E26F7C1B8BD53 }} 
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D061346B60D4432B925C710D672F43E3 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_1BC96D459AB44538AEAF816939674C23 }} 
+          client-id: ${{ secrets.AZURE_CLIENT_ID }} 
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
             
       - name: 'Run the Azure Functions action'
         uses: Azure/functions-action@v1
         id: deploy-to-function-app
         with:
-          app-name: ${{ 'aki-notify-institution-a8gpgzf0b7bjhph4' }}
+          app-name: 'aki-notify-institution'
           package: .
-
-# Instructions:
-# 1. In Azure Portal, go to your Function App > Get Publish Profile.
-# 2. In GitHub repo, go to Settings > Secrets > Actions > New repository secret.
-# 3. Name: AZURE_FUNCTIONAPP_PUBLISH_PROFILE, Value: paste the publish profile XML.
-# 4. Push to main branch to trigger deployment.
